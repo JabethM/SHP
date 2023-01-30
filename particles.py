@@ -13,14 +13,15 @@ class Particles:
     time = 0
     length = None
 
-    def __init__(self, velocity, position, mass, length=None):
+    def __init__(self, velocity, position, mass, length=None, name=None):
         self.velocity = velocity
         self.position = position % Particles.length  # cls.length might not be set yet
         self.mass = mass
         self.momentum = self.compute_mom()
-
         if Particles.length is None:
             Particles.length = length
+        self.name = name
+        self.radius = Particles.length / 200
 
     def compute_mom(self):
         mom = self.mass * self.velocity
@@ -56,6 +57,15 @@ class Particles:
         return
 
     def update_position(self, delta_time):
-        self.set_position(self.velocity * delta_time)
+        self.set_position(round(self.velocity * delta_time + self.position, 7))
         return self.get_position()
 
+    def calc_new_velocity(self, other: 'Particles'):
+        new_vel = (self.velocity * (self.mass - other.mass) + 2 * other.mass * other.velocity) / (
+                self.mass + other.mass)
+
+        return new_vel
+
+    def update_mom(self):
+        self.momentum = self.compute_mom()
+        return

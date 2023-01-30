@@ -61,14 +61,20 @@ class run:
     def pos_sort(self, part: Particles):
         return part.position
 
+    def detect_next_collision(self):
+        collisions = [(self.t_t_collision(self.system[i], self.system[j]), i, j) for i in range(len(self.system))
+                      for j in range(i + 1, len(self.system))]
+        times = [x[0] for x in collisions]
+        next_coll = np.argmin(times)
+
+        return collisions[next_coll]
+
     def collision_approach(self):
         events = []
         for t in range(1000):
-            collisions = [(self.t_t_collision(self.system[i], self.system[j]), i, j) for i in range(len(self.system))
-                          for j in range(i + 1, len(self.system))]
-            times = [x[0] for x in collisions]
-            next_coll = np.argmin(times)
-            self.update_values(*collisions[next_coll])
+            collision_info = self.detect_next_collision()
+
+            self.update_values(*collision_info)
             self.update_diagram()
             print("".join(self.diagram))
             """positions = [i for i in self.system]
@@ -87,7 +93,7 @@ class run:
 
             # print("Colliding: " + str(collisions[next_coll]))
 
-            events.append(collisions[next_coll])
+            events.append(collision_info)
 
         """for e in range(1, len(events)):
             if (events[e][1], events[e][2]) == (events[e - 1][1], events[e - 1][2]):
@@ -98,6 +104,28 @@ class run:
 """
         return
 
+    def system_positions(self, t, idx):
+        collision_info = self.detect_next_collision()
+        next_coll_time = collision_info[0]
+
+        if t + idx >= next_coll_time:
+            self.update_values(*collision_info)
+        else:
+            for part in self.system:
+                Particles.update_time(t)
+                part.update_position(t)
+
+        self.update_diagram()
+
+        return self.system
+
+    def time_approach(self, idx, end):
+
+        for t in [idx] * end:
+            self.system_positions(t, idx)
+            print("".join(self.diagram))
+        return
+
 
 def main():
     l = 100
@@ -105,7 +133,8 @@ def main():
     B = (15, 50, 2)
     C = (-5, 25, 15)
     sim = run(l, A, B, C)
-    sim.collision_approach()
+    # sim.collision_approach()
+    sim.time_approach(0.1, 1000)
 
 
 # Press the green button in the gutter to run the script.

@@ -11,6 +11,8 @@ class run:
         self.B = Particles(*b_params, name="B")
         self.C = Particles(*c_params, name="C")
         self.system = [self.A, self.B, self.C]
+        self.consMom = sum([i.momentum for i in self.system])
+        self.consE = sum([0.5*i.mass*(i.velocity**2) for i in self.system])
         self.update_diagram()
 
     def t_t_collision(self, part1: Particles, part2: Particles):
@@ -77,31 +79,10 @@ class run:
             self.update_values(*collision_info)
             self.update_diagram()
             print("".join(self.diagram))
-            """positions = [i for i in self.system]
-            positions.sort(key=self.pos_sort)
-            pos = [i.name for i in positions]
-            # print(pos)
 
-            x = "".join(pos)
-            if x != "CBA" and x != "ACB" and x != "BAC":
-                print("FAIL")
-                break
-            else:
-                print("success")
-
-            # """
-
-            # print("Colliding: " + str(collisions[next_coll]))
 
             events.append(collision_info)
 
-        """for e in range(1, len(events)):
-            if (events[e][1], events[e][2]) == (events[e - 1][1], events[e - 1][2]):
-                print("ERROR at: " + str(e))
-                break
-            else:
-                print("SUCCESS")
-"""
         return
 
     def system_positions(self, t, idx):
@@ -116,6 +97,7 @@ class run:
                 part.update_position(t)
 
         self.update_diagram()
+        print(self.consMom, self.consE)
 
         return self.system
 
@@ -123,18 +105,21 @@ class run:
 
         for t in [idx] * end:
             self.system_positions(t, idx)
-            print("".join(self.diagram))
+
         return
 
 
 def main():
-    l = 100
-    A = (12, 100, 10)
-    B = (15, 50, 2)
-    C = (-5, 25, 15)
-    sim = run(l, A, B, C)
+    ####
+    # Set System Parameters
+    length = 1000  # Length
+    A = (0, 0, 1500000000)  # Velocity, Position and Mass
+    B = (-1, -700, 0.001)
+    C = (-2, -100, 150)
+    sim = run(length, A, B, C)  # Create the system
+    ####
     # sim.collision_approach()
-    sim.time_approach(0.1, 1000)
+    # sim.time_approach(0.1, 1000)
 
 
 # Press the green button in the gutter to run the script.

@@ -11,25 +11,16 @@ from particles import Particles
 dt = 0.005
 tMax = 1000
 
-l = 100
-A = (3, 100, 10)
-B = (2, 50, 2)
-C = (-1, 25, 15)
-sim = main.run(l, A, B, C)
-
 
 def get_pos(t=0):
-
     while t < tMax:
         t += dt
         system = sim.system_positions(t, dt)
-        for i in system:
-            print(i.position)
+
         yield system[0].position, system[1].position, system[2].position
 
 
 def init():
-
     ax.set_xlim(0, Particles.length)
     ax.set_ylim(-25 * sim.system[0].radius, 25 * sim.system[0].radius)
     ax.set_xlabel('$x$ /m')
@@ -41,13 +32,21 @@ def init():
 
 
 def animate(pos: [Particles]):
-
     x1, x2, x3 = pos
-    balls[0].set_center((x1,0))
-    balls[1].set_center((x2,0))
-    balls[2].set_center((x3,0))
+    balls[0].set_center((x1, 0))
+    balls[1].set_center((x2, 0))
+    balls[2].set_center((x3, 0))
     return balls[0], balls[1], balls[2]
 
+
+####
+# Set System Parameters
+length = 1000  # Length
+A = (0, 0, 1500000000)  # Velocity, Position and Mass
+B = (-1, -700, 0.001)
+C = (-2, -100, 150)
+sim = main.run(length, A, B, C)  # Create the system
+####
 
 fig, ax = plt.subplots()
 ax.set_aspect('equal')
@@ -58,8 +57,6 @@ balls = [plt.Circle((sim.system[i].position, i), radius=sim.system[i].radius, co
 ax.add_patch(balls[0])
 ax.add_patch(balls[1])
 ax.add_patch(balls[2])
-
-xdata, ydata = [], []
 
 interval = 1000 * dt
 ani = animation.FuncAnimation(fig, animate, get_pos, blit=True,

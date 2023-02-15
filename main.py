@@ -1,12 +1,13 @@
 from particles import Particles
 import numpy as np
+from objects import Objects
 
 
 class run:
 
     def __init__(self, length, a_params, b_params, c_params):
         self.diagram = None
-        Particles.length = length
+        Objects.length = length
         self.A = Particles(*a_params, name="A")
         self.B = Particles(*b_params, name="B")
         self.C = Particles(*c_params, name="C")

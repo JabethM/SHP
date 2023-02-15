@@ -12,7 +12,7 @@ class run:
         self.C = Particles(*c_params, name="C")
         self.system = [self.A, self.B, self.C]
         self.consMom = sum([i.momentum for i in self.system])
-        self.consE = sum([0.5*i.mass*(i.velocity**2) for i in self.system])
+        self.consE = sum([0.5 * i.mass * (i.velocity ** 2) for i in self.system])
         self.update_diagram()
 
     def t_t_collision(self, part1: Particles, part2: Particles):
@@ -80,7 +80,6 @@ class run:
             self.update_diagram()
             print("".join(self.diagram))
 
-
             events.append(collision_info)
 
         return
@@ -93,7 +92,7 @@ class run:
             self.update_values(*collision_info)
         else:
             for part in self.system:
-                Particles.update_time(t)
+                Particles.update_time(idx)
                 part.update_position(t)
 
         self.update_diagram()

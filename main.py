@@ -1,11 +1,12 @@
 from particles import Particles
 import numpy as np
 from objects import Objects
+from walls import Walls
 
 
 class run:
 
-    def __init__(self, length, a_params, b_params, c_params):
+    def __init__(self, length, a_params, b_params, c_params, w_params=None):
         self.diagram = None
         Objects.length = length
         self.A = Particles(*a_params, name="A")
@@ -16,6 +17,11 @@ class run:
         self.consE = sum([0.5 * i.mass * (i.velocity ** 2) for i in self.system])
         self.update_diagram()
 
+        self.W = None
+        if w_params is not None:
+            self.W = Walls(*w_params, name="W")
+            self.system.append(self.W)
+
     def t_t_collision(self, part1: Particles, part2: Particles):
         """
         Time Until Collision
@@ -24,7 +30,7 @@ class run:
         :return:
         """
         delta_vel = part1.velocity - part2.velocity
-        delta_dist = (np.sign([delta_vel])[0] * (part2.position - part1.position)) % Particles.length - 2 * part1.radius
+        delta_dist = (np.sign([delta_vel])[0] * (part2.position - part1.position)) % Objects.length - 2 * part1.radius
         # delta_dist calculates which distance to use based on the difference in velocity
         if delta_vel == 0:
             return float('inf')
@@ -33,7 +39,7 @@ class run:
         return time
 
     def update_values(self, time, part1_idx, part2_idx):
-        Particles.update_time(time)
+        Objects.update_time(time)
         part1 = self.system[part1_idx]
         part2 = self.system[part2_idx]
 
@@ -49,13 +55,13 @@ class run:
         part1.update_mom()
         part2.update_mom()
 
-        Particles.update_time(0.000005)
-        for part in self.system:
-            part.update_position(0.000005)
+        #Objects.update_time(0.000005)
+        #for part in self.system:
+        #    part.update_position(0.000005)
         return
 
     def update_diagram(self):
-        self.diagram = ["."] * Particles.length
+        self.diagram = ["."] * Objects.length
         self.diagram[round(self.A.position) % Particles.length] = "A"
         self.diagram[round(self.B.position) % Particles.length] = "B"
         self.diagram[round(self.C.position) % Particles.length] = "C"
@@ -85,26 +91,30 @@ class run:
 
         return
 
-    def system_positions(self, t, idx):
+    def system_positions(self, t, dt):
         collision_info = self.detect_next_collision()
         next_coll_time = collision_info[0]
 
-        if t + idx >= next_coll_time:
+        if t + dt >= t + next_coll_time:
             self.update_values(*collision_info)
         else:
             for part in self.system:
-                Particles.update_time(idx)
-                part.update_position(t)
+                # Objects.update_time(idx)
+                part.update_position(dt)
 
         self.update_diagram()
-        print(self.consMom, self.consE)
-
+        # print(self.consMom, self.consE)
+        o = 2 * (collision_info[1] + collision_info[2]) % 3
+        print(self.system[o].name)
         return self.system
 
-    def time_approach(self, idx, end):
+    def time_approach(self, dt, end):
+        t = 0
+        while Objects.time <= end:
 
-        for t in [idx] * end:
-            self.system_positions(t, idx)
+            self.system_positions(t, dt)
+            t += dt
+            Objects.time = t
 
         return
 
@@ -113,13 +123,13 @@ def main():
     ####
     # Set System Parameters
     length = 1000  # Length
-    A = (0, 0, 1500000000)  # Velocity, Position and Mass
-    B = (-1, -700, 0.001)
+    A = (0, 0, 150)  # Velocity, Position and Mass
+    B = (-1, -700, 1)
     C = (-2, -100, 150)
     sim = run(length, A, B, C)  # Create the system
     ####
     # sim.collision_approach()
-    # sim.time_approach(0.1, 1000)
+    sim.time_approach(0.1, 10000)
 
 
 # Press the green button in the gutter to run the script.

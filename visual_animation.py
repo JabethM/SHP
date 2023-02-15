@@ -43,8 +43,8 @@ def animate(pos: [Particles]):
 # Set System Parameters
 length = 1000  # Length
 A = (0, 0, 150)  # Velocity, Position and Mass
-B = (-1, -700, 1)
-C = (-2, -100, 150)
+B = (-200, -700, 1)
+C = (-400, -100, 150)
 sim = main.run(length, A, B, C)  # Create the system
 ####
 

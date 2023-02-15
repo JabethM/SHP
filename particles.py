@@ -1,7 +1,7 @@
 from multipledispatch import dispatch
 import numpy as np
 
-from Walls import Walls
+from walls import Walls
 from objects import Objects
 
 
@@ -30,4 +30,9 @@ class Particles(Objects):
         # self.name = name
         self.radius = (Objects.length / 200)  # * sigmoid(np.sqrt(self.mass))
 
-
+    def calc_new_velocity(self, other: 'Objects'):
+        if isinstance(other, Walls):
+            return self.velocity
+        else:
+            new_vel = super().calc_new_velocity(other)
+        return new_vel

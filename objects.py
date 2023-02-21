@@ -64,5 +64,6 @@ class Objects:
         return
 
     def update_position(self, delta_time):
+        v = self.velocity * delta_time
         self.set_position(self.velocity * delta_time + self.position)
         return self.get_position()

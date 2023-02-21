@@ -22,15 +22,20 @@ class run:
             self.W = Walls(*w_params, name="W")
             self.system.append(self.W)
 
-    def t_t_collision(self, part1: Particles, part2: Particles):
+    def t_t_collision(self, part1: Objects, part2: Objects):
         """
         Time Until Collision
         :param part1:
         :param part2:
         :return:
         """
+
         delta_vel = part1.velocity - part2.velocity
-        delta_dist = (np.sign([delta_vel])[0] * (part2.position - part1.position)) % Objects.length - 2 * part1.radius
+        a = np.sign([delta_vel])[0]
+        b = (part2.position - part1.position)
+        c = (a * b) % Objects.length
+        d = (part1.radius + part2.radius)
+        delta_dist = c - d
         # delta_dist calculates which distance to use based on the difference in velocity
         if delta_vel == 0:
             return float('inf')
@@ -39,7 +44,7 @@ class run:
         return time
 
     def update_values(self, time, part1_idx, part2_idx):
-        Objects.update_time(time)
+
         part1 = self.system[part1_idx]
         part2 = self.system[part2_idx]
 
@@ -55,8 +60,8 @@ class run:
         part1.update_mom()
         part2.update_mom()
 
-        #Objects.update_time(0.000005)
-        #for part in self.system:
+        # Objects.update_time(0.000005)
+        # for part in self.system:
         #    part.update_position(0.000005)
         return
 
@@ -71,7 +76,9 @@ class run:
         return part.position
 
     def detect_next_collision(self):
-        collisions = [(self.t_t_collision(self.system[i], self.system[j]), i, j) for i in range(len(self.system))
+        collisions = [(self.t_t_collision(self.system[i], self.system[j]), i, j, (isinstance(self.system[i], Walls)
+                                                                                  or isinstance(self.system[j], Walls)))
+                      for i in range(len(self.system))
                       for j in range(i + 1, len(self.system))]
         times = [x[0] for x in collisions]
         next_coll = np.argmin(times)
@@ -85,18 +92,20 @@ class run:
 
             self.update_values(*collision_info)
             self.update_diagram()
-            print("".join(self.diagram))
+            # print("".join(self.diagram))
 
             events.append(collision_info)
 
         return
 
     def system_positions(self, t, dt):
+        Objects.update_time(dt)
         collision_info = self.detect_next_collision()
         next_coll_time = collision_info[0]
 
-        if t + dt >= t + next_coll_time:
-            self.update_values(*collision_info)
+        if t + dt >= t + next_coll_time or (next_coll_time < 0):
+            c = collision_info[1:]
+            self.update_values(dt, *collision_info[1:-1])
         else:
             for part in self.system:
                 # Objects.update_time(idx)
@@ -105,13 +114,13 @@ class run:
         self.update_diagram()
         # print(self.consMom, self.consE)
         o = 2 * (collision_info[1] + collision_info[2]) % 3
-        print(self.system[o].name)
+        # print(self.system[o].name)
+
         return self.system
 
     def time_approach(self, dt, end):
         t = 0
         while Objects.time <= end:
-
             self.system_positions(t, dt)
             t += dt
             Objects.time = t
@@ -123,9 +132,10 @@ def main():
     ####
     # Set System Parameters
     length = 1000  # Length
-    A = (0, 0, 150)  # Velocity, Position and Mass
+    A = (0, 100, 150)  # Velocity, Position and Mass
     B = (-1, -700, 1)
     C = (-2, -100, 150)
+    W = (0, 0, 0)
     sim = run(length, A, B, C)  # Create the system
     ####
     # sim.collision_approach()

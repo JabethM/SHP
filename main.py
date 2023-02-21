@@ -83,7 +83,7 @@ class run:
         times = [x[0] for x in collisions]
         next_coll = np.argmin(times)
 
-        return collisions[next_coll]
+        return next_coll, collisions
 
     def collision_approach(self):
         events = []
@@ -100,13 +100,17 @@ class run:
 
     def system_positions(self, t, dt):
         Objects.update_time(dt)
-        collision_info = self.detect_next_collision()
+        next_coll, collisions = self.detect_next_collision()
+        collision_info = collisions[next_coll]
         next_coll_time = collision_info[0]
+        collision_occured = False
 
-        if t + dt >= t + next_coll_time or (next_coll_time < 0):
-            c = collision_info[1:]
-            self.update_values(dt, *collision_info[1:-1])
-        else:
+        for i in range(len(collisions)):
+            nt = collisions[i][0]
+            if t + dt >= t + nt and (not collisions[i][-1] or nt > 0):
+                self.update_values(dt, *collisions[i][1:-1])
+                collision_occured = True
+        if not collision_occured:
             for part in self.system:
                 # Objects.update_time(idx)
                 part.update_position(dt)

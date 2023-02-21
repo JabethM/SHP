@@ -39,13 +39,13 @@ def animate(pos: [Particles]):
     balls[0].set_center((x1, 0))
     balls[1].set_center((x2, 0))
     balls[2].set_center((x3, 0))
-    #l = legend
-    #legend.remove()
+    l = legend
+    legend.remove()
 
     for i in range(len(balls)):
-        lab = "m = " + str(round(sim.system[i].mass)) + ", v = " + str(round(sim.system[i].velocity))
-    #    legend.get_texts()[i].set_text(lab)
-    #ax.legend()
+        lab = "m = " + str(round(sim.system[i].mass))
+        legend.get_texts()[i].set_text(lab)
+    ax.legend()
     return balls[0], balls[1], balls[2]
 
 
@@ -78,12 +78,12 @@ balls[1].set_color('g')
 balls[2].set_color('b')
 
 for i in range(len(balls)):
-    balls[i].set_label("m = " + str(round(sim.system[i].mass)) + ", initial v = " + str(round(sim.system[i].velocity)))
+    balls[i].set_label("m = " + str(round(sim.system[i].mass)))
     ax.add_patch(balls[i])
 
 
 interval = 1000 * dt
 ani = animation.FuncAnimation(fig, animate, get_pos, blit=True,
                               interval=interval, repeat=False, init_func=init)
-#legend = ax.legend(prop={'size': 6})
+legend = ax.legend(prop={'size': 6})
 plt.show()

@@ -6,7 +6,7 @@ from walls import Walls
 
 class run:
 
-    def __init__(self, length, a_params, b_params, c_params, w_params=None):
+    def __init__(self, length, a_params, b_params, c_params, w_positions=None):
         self.diagram = None
         Objects.length = length
         self.A = Particles(*a_params, name="A")
@@ -18,9 +18,12 @@ class run:
         self.update_diagram()
 
         self.W = None
-        if w_params is not None:
-            self.W = Walls(*w_params, name="W")
-            self.system.append(self.W)
+        if w_positions is not None:
+            self.W = []
+            for i in range(len(w_positions)):
+                w = Walls(0, w_positions[i], 0, name="W" + str(i))
+                self.system.append(w)
+                self.W.append(w)
 
     def t_t_collision(self, part1: Objects, part2: Objects):
         """
@@ -103,14 +106,15 @@ class run:
         next_coll, collisions = self.detect_next_collision()
         collision_info = collisions[next_coll]
         next_coll_time = collision_info[0]
-        collision_occured = False
+        collision_occurred = False
 
         for i in range(len(collisions)):
-            nt = collisions[i][0]
-            if t + dt >= t + nt and (not collisions[i][-1] or nt > 0):
+            current = collisions[i]
+            nt = current[0]
+            if t + dt >= t + nt and (not current[-1] or nt > 0):
                 self.update_values(dt, *collisions[i][1:-1])
-                collision_occured = True
-        if not collision_occured:
+                collision_occurred = True
+        if not collision_occurred:
             for part in self.system:
                 # Objects.update_time(idx)
                 part.update_position(dt)

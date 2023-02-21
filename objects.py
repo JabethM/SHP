@@ -3,7 +3,7 @@ import numpy as np
 
 class Objects:
     time = 0
-    dt = 0.1
+    dt = 0.00000001
     length = None
 
     def __init__(self, velocity, position, mass, length=None, name=None):

@@ -4,6 +4,8 @@ import matplotlib;
 import random
 import numpy as np
 
+from objects import Objects
+
 matplotlib.use("TkAgg")
 import main
 
@@ -30,44 +32,54 @@ def init():
     for i in range(len(balls)):
         balls[i].set_center((sim.system[i].position, 0))
 
-    return balls[0], balls[1], balls[2]
+    return balls
 
 
 def animate(pos: [Particles]):
-
     x1, x2, x3 = pos
     balls[0].set_center((x1, 0))
     balls[1].set_center((x2, 0))
     balls[2].set_center((x3, 0))
-    l = legend
-    legend.remove()
+    max_pressure = 1
+    for i in range(len(lines)):
+        lines[i].set_data(sim.W[i].time_list, sim.W[i].p_list)
 
-    for i in range(len(balls)):
-        lab = "m = " + str(round(sim.system[i].mass))
-        legend.get_texts()[i].set_text(lab)
-    ax.legend()
-    return balls[0], balls[1], balls[2]
+        if sim.W[i].p_list[-1] > max_pressure:
+            max_pressure = sim.W[i].p_list[-1]
+
+    ax2.set_xlim(left=0, right=Objects.time + 0.05* Objects.time)
+    ax2.set_ylim(bottom=0, top=max_pressure + 0.05 * max_pressure)
+    return balls, lines
 
 
 ####
 # Set System Parameters
+def rand_num():
+    return np.random.random() * 100
+
+
 length = 1000  # Length
-vel1 = np.random.random() * 400
-vel2 = np.random.random() * -400
-m1 = np.random.random() * 50
-m2 = np.random.random() * 50
-m3 = 10
-vel3 = -(m1 * vel1 + m2 * vel2) / m3
+v = 50
+cap = v * 100
+vel1 = (rand_num() * v) - cap/2
+vel2 = (rand_num() * v) - cap/2
+vel3 = (rand_num() * v) - cap/2
+m1 = rand_num()
+m2 = rand_num()
+m3 = rand_num()
+# vel3 = -(m1 * vel1 + m2 * vel2) / m3
 
-A = (400, 100, 50)  # Velocity, Position and Mass
-B = (-200, -100, 30)
-C = (10, -500, 10)
+A = (-1000, 100, 88)  # Velocity, Position and Mass
+B = (1000, -100, 75)
+C = (10, -400, 1)
 
-W = (0, 0, 0)
+W = [0, 333, 667]
 sim = main.run(length, A, B, C, W)  # Create the system
 ####
 
-fig, ax = plt.subplots()
+fig = plt.figure()
+ax = fig.add_subplot(211)
+ax2 = fig.add_subplot(212)
 ax.set_aspect('equal')
 
 # These are the objects we need to keep track of.
@@ -77,13 +89,16 @@ balls[0].set_color('r')
 balls[1].set_color('g')
 balls[2].set_color('b')
 
+lines = [ax2.plot(w.time_list, w.p_list, label="x = " + str(w.position))[0] for w in sim.W]
+
 for i in range(len(balls)):
     balls[i].set_label("m = " + str(round(sim.system[i].mass)))
     ax.add_patch(balls[i])
 
-
 interval = 1000 * dt
-ani = animation.FuncAnimation(fig, animate, get_pos, blit=True,
+ani = animation.FuncAnimation(fig, animate, get_pos,
                               interval=interval, repeat=False, init_func=init)
-legend = ax.legend(prop={'size': 6})
+
+legend1 = ax.legend(prop={'size': 6}, loc='center left', bbox_to_anchor=(1, 0.5))
+legend2 = ax2.legend(prop={'size': 6}, loc='center left', bbox_to_anchor=(1, 0.5))
 plt.show()

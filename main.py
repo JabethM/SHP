@@ -17,6 +17,8 @@ class run:
         self.consE = sum([0.5 * i.mass * (i.velocity ** 2) for i in self.system])
         self.update_diagram()
 
+        self.debug_count = 0
+
         self.W = None
         if w_positions is not None:
             self.W = []
@@ -46,16 +48,16 @@ class run:
         time = delta_dist / abs(delta_vel)
         return time
 
-    def update_values(self, time, part1_idx, part2_idx):
+    def update_values(self, nt, part1_idx, part2_idx, is_wall):
 
         part1 = self.system[part1_idx]
         part2 = self.system[part2_idx]
 
-        for part in self.system:
-            part.update_position(time)
-
         part1_vel = part1.calc_new_velocity(part2)
         part2_vel = part2.calc_new_velocity(part1)
+
+        for part in self.system:
+            part.update_position(nt)
 
         part1.set_velocity(part1_vel)
         part2.set_velocity(part2_vel)
@@ -78,15 +80,27 @@ class run:
     def pos_sort(self, part: Particles):
         return part.position
 
-    def detect_next_collision(self):
+    def detect_next_collision(self, dt=0):
+        arbitrary_num = len(self.W)
+        reset_t = Objects.time
+        Objects.update_time(dt)
         collisions = [(self.t_t_collision(self.system[i], self.system[j]), i, j, (isinstance(self.system[i], Walls)
                                                                                   or isinstance(self.system[j], Walls)))
                       for i in range(len(self.system))
                       for j in range(i + 1, len(self.system))]
-        times = [x[0] for x in collisions]
-        next_coll = np.argmin(times)
 
-        return next_coll, collisions
+        collisions = sorted(collisions, key=(lambda x: x[1] + x[2] * arbitrary_num if x[-1] else x[1] + x[2]))
+        ball_collisions = sorted(collisions[:3], key=(lambda x: x[0]))
+        wall_collisions = []
+
+        times = [x[0] for x in ball_collisions]
+        next_coll = np.argmin(times)
+        Objects.reset_time(reset_t)
+
+        if self.W is not None:
+            wall_collisions = collisions[3:]
+
+        return next_coll, ball_collisions, wall_collisions
 
     def collision_approach(self):
         events = []
@@ -101,27 +115,51 @@ class run:
 
         return
 
-    def system_positions(self, t, dt):
-        Objects.update_time(dt)
-        next_coll, collisions = self.detect_next_collision()
-        collision_info = collisions[next_coll]
-        next_coll_time = collision_info[0]
-        collision_occurred = False
-
+    def recursive(self, dt_nt, endpoint):
+        next_coll, collisions = self.detect_next_collision(dt_nt)
+        ret = False
         for i in range(len(collisions)):
             current = collisions[i]
             nt = current[0]
-            if t + dt >= t + nt and (not current[-1] or nt > 0):
-                self.update_values(dt, *collisions[i][1:-1])
-                collision_occurred = True
+            carry = Objects.time + dt_nt + nt
+            if endpoint >= carry and (not current[-1] or nt > 0):
+                Objects.update_time(dt_nt)
+                self.update_values(*collisions[i])
+                self.recursive(carry, endpoint)
+        return
+
+    def system_positions(self, dt):
+        self.debug_count += 1
+
+        next_coll, p_collisions, w_collisions = self.detect_next_collision()
+        collision_info = p_collisions[next_coll]
+        next_coll_time = collision_info[0]
+        collision_occurred = False
+
+        if Objects.time + dt >= Objects.time + next_coll_time and (not collision_info[-1] or next_coll_time > 0):
+            self.update_values(*collision_info)
+
+            # self.recursive(nt, Objects.time + dt)
+            # z = Objects.time
+            # Objects.reset_time(t)
+            collision_occurred = True
+
+        for i in range(len(w_collisions)):
+            current = w_collisions[i]
+            nt = current[0]
+            if Objects.time + dt >= Objects.time + nt and nt > 0:
+                self.system[current[2]].update_position(nt)
+                self.system[current[2]].calc_new_velocity(self.system[current[1]])
+
         if not collision_occurred:
             for part in self.system:
-                # Objects.update_time(idx)
                 part.update_position(dt)
 
         self.update_diagram()
-        # print(self.consMom, self.consE)
-        o = 2 * (collision_info[1] + collision_info[2]) % 3
+        print(self.consMom, self.consE)
+        t = Objects.update_time(dt)
+
+        # o = 2 * (collision_info[1] + collision_info[2]) % 3
         # print(self.system[o].name)
 
         return self.system

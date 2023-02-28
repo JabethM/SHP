@@ -61,6 +61,11 @@ class Objects:
     @staticmethod
     def update_time(time):
         Objects.time += time
+        return Objects.time
+
+    @staticmethod
+    def reset_time(time):
+        Objects.time = time
         return
 
     def update_position(self, delta_time):

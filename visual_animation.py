@@ -19,7 +19,7 @@ tMax = 1000
 def get_pos(t=0):
     while t < tMax:
         t += dt
-        system = sim.system_positions(t, dt)
+        system = sim.system_positions(dt)
 
         yield system[0].position, system[1].position, system[2].position
 
@@ -40,15 +40,18 @@ def animate(pos: [Particles]):
     balls[0].set_center((x1, 0))
     balls[1].set_center((x2, 0))
     balls[2].set_center((x3, 0))
+
     max_pressure = 1
+    
     for i in range(len(lines)):
         lines[i].set_data(sim.W[i].time_list, sim.W[i].p_list)
 
         if sim.W[i].p_list[-1] > max_pressure:
             max_pressure = sim.W[i].p_list[-1]
 
-    ax2.set_xlim(left=0, right=Objects.time + 0.05* Objects.time)
+    ax2.set_xlim(left=0, right=Objects.time + 0.05 * Objects.time)
     ax2.set_ylim(bottom=0, top=max_pressure + 0.05 * max_pressure)
+
     return balls, lines
 
 
@@ -58,22 +61,32 @@ def rand_num():
     return np.random.random() * 100
 
 
+def rand_set():
+    return np.array([rand_num(), rand_num(), rand_num()])
+
+
 length = 1000  # Length
-v = 50
+m = rand_set() / 4
+p = rand_set() * 10
+
+v = 25
 cap = v * 100
-vel1 = (rand_num() * v) - cap/2
-vel2 = (rand_num() * v) - cap/2
-vel3 = (rand_num() * v) - cap/2
-m1 = rand_num()
-m2 = rand_num()
-m3 = rand_num()
-# vel3 = -(m1 * vel1 + m2 * vel2) / m3
+vel1 = (rand_num() * v) - cap / 2
+vel2 = (rand_num() * v) - cap / 2
+vel3 = -(m[0] * vel1 + m[1] * vel2) / m[2]
+# vel3 = (rand_num() * v) - cap/2
 
-A = (-1000, 100, 88)  # Velocity, Position and Mass
-B = (1000, -100, 75)
-C = (10, -400, 1)
 
-W = [0, 333, 667]
+# A = (vel1, p[0], m[0])  # Velocity, Position and Mass
+# B = (vel2, p[1], m[1])
+# C = (vel3, p[2], m[2])
+
+A = (500, 10, 200)
+B = (10, 300, 1)
+C = (-500,-300, 200)
+
+
+W = [0, 333, 666]
 sim = main.run(length, A, B, C, W)  # Create the system
 ####
 

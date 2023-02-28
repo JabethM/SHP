@@ -69,7 +69,7 @@ length = 1000  # Length
 m = rand_set() / 4
 p = rand_set() * 10
 
-v = 25
+v = 50
 cap = v * 100
 vel1 = (rand_num() * v) - cap / 2
 vel2 = (rand_num() * v) - cap / 2
@@ -77,13 +77,13 @@ vel3 = -(m[0] * vel1 + m[1] * vel2) / m[2]
 # vel3 = (rand_num() * v) - cap/2
 
 
-# A = (vel1, p[0], m[0])  # Velocity, Position and Mass
-# B = (vel2, p[1], m[1])
-# C = (vel3, p[2], m[2])
+A = (vel1, p[0], m[0])  # Velocity, Position and Mass
+B = (vel2, p[1], m[1])
+C = (vel3, p[2], m[2])
+print("A = " + str(A))
+print("B = " + str(B))
+print("C = " + str(C))
 
-A = (500, 10, 200)
-B = (10, 300, 1)
-C = (-500,-300, 200)
 
 
 W = [0, 333, 666]

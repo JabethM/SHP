@@ -7,6 +7,7 @@ from walls import Walls
 class run:
 
     def __init__(self, length, a_params, b_params, c_params, w_positions=None):
+        self.write = False
         self.diagram = None
         Objects.length = length
         self.A = Particles(*a_params, name="A")
@@ -74,9 +75,6 @@ class run:
         self.diagram[round(self.C.position) % Particles.length] = "C"
         return
 
-    def pos_sort(self, part: Particles):
-        return part.position
-
     def detect_next_collision(self, dt=0):
         arbitrary_num = len(self.P)
 
@@ -135,10 +133,30 @@ class run:
         # print(self.consMom, self.consE)
         t = Objects.update_time(dt)
 
+        if Objects.time >= 0.5 and not self.write:
+            self.export_pressure()
+            self.write = True
         # o = 2 * (collision_info[1] + collision_info[2]) % 3
         # print(self.system[o].name)
 
         return self.system
+
+    def export_pressure(self):
+        with open('pressure-data.txt', 'w') as f:
+
+            f.write("#######\n")
+            f.write("init conditions: \n")
+            for p in self.P:
+                f.write(p.name + ": (v=" + str(p.velocity) + ", p=" + str(p.position) + ", m=" + str(p.mass) + ")\n")
+            f.write("#######\n")
+            f.write("Time:\n")
+            f.write("t = " + str(self.W[0].time_list) + "\n")
+            for w in self.W:
+                f.write("Position - " + str(w.position) + "\n")
+                f.write("p = " + str(w.p_list))
+                f.write('\n')
+            f.write("------\n")
+            f.close()
 
     def time_approach(self, dt, end):
         t = 0

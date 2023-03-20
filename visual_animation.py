@@ -42,7 +42,7 @@ def animate(pos: [Particles]):
     balls[2].set_center((x3, 0))
 
     max_pressure = 1
-    
+
     for i in range(len(lines)):
         lines[i].set_data(sim.W[i].time_list, sim.W[i].p_list)
 
@@ -80,13 +80,13 @@ vel3 = -(m[0] * vel1 + m[1] * vel2) / m[2]
 A = (vel1, p[0], m[0])  # Velocity, Position and Mass
 B = (vel2, p[1], m[1])
 C = (vel3, p[2], m[2])
+
 print("A = " + str(A))
 print("B = " + str(B))
 print("C = " + str(C))
 
 
-
-W = [0, 333, 666]
+W = range(0, 1000, 100)
 sim = main.run(length, A, B, C, W)  # Create the system
 ####
 

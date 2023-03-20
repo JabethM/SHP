@@ -133,7 +133,7 @@ class run:
         # print(self.consMom, self.consE)
         t = Objects.update_time(dt)
 
-        if Objects.time >= 10 and not self.write:
+        if Objects.time >= 50 and not self.write:
             self.export_pressure()
             self.export_pos_dist()
             self.write = True
@@ -171,10 +171,17 @@ class run:
 
             f.write("######\n")
             for p in self.P:
-                f.write("" + str(p.name) + " distribution = " + np.array_str(p.pos_distribution, max_line_width=1000000) + "\n")
+                f.write(
+                    "" + str(p.name) + " pos_dist = " + np.array_str(p.pos_distribution, max_line_width=1000000) + "\n")
+
+            f.write("###########\n")
+            for p in self.P:
+                f.write("" + str(p.name) + " pressure_dist = " + np.array_str(p.pressure_distribution,
+                                                                              max_line_width=1000000) + "\n")
 
             f.write("------\n")
             f.close()
+
     def time_approach(self, dt, end):
         t = 0
         while Objects.time <= end:

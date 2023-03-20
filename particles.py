@@ -30,7 +30,8 @@ class Particles(Objects):
         # self.name = name
         self.radius = (Objects.length / 200)  # * sigmoid(np.sqrt(self.mass))
         self.increments = 1
-        self.pos_distribution = np.zeros(int(Objects.length // self.increments) - 1)
+        self.pos_distribution = np.zeros(int(Objects.length // self.increments))
+        self.pressure_distribution = np.zeros(int(Objects.length // self.increments))
 
     def calc_new_velocity(self, other: 'Objects'):
         if isinstance(other, Walls):
@@ -42,7 +43,17 @@ class Particles(Objects):
     def update_position(self, delta_time):
         p = super().update_position(delta_time)
 
-        p_shifted = np.roll(self.pos_distribution, 5 - int(p))
-        p_shifted[:11] += 1
-        self.pos_distribution = np.roll(p_shifted, int(p) - 5)
+        pos_shifted = np.roll(self.pos_distribution, 5 - int(p))
+        pos_shifted[:11] += 1
+        self.pos_distribution = np.roll(pos_shifted, int(p) - 5)
+
+        pre_shifted = np.roll(self.pressure_distribution, 5 - int(p))
+        pre_shifted[:11] += self.momentum
+        self.pressure_distribution = np.roll(pre_shifted, int(p) - 5)
+        """
+        num_test = int(p)
+        num = (int(p) + np.sign(self.velocity) * 5) % Objects.length
+        self.pressure_distribution[int(num)] += self.momentum
+        """
+
 

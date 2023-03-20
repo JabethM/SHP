@@ -133,8 +133,9 @@ class run:
         # print(self.consMom, self.consE)
         t = Objects.update_time(dt)
 
-        if Objects.time >= 0.5 and not self.write:
+        if Objects.time >= 10 and not self.write:
             self.export_pressure()
+            self.export_pos_dist()
             self.write = True
         # o = 2 * (collision_info[1] + collision_info[2]) % 3
         # print(self.system[o].name)
@@ -158,6 +159,22 @@ class run:
             f.write("------\n")
             f.close()
 
+    def export_pos_dist(self):
+        with open('position_distribution.txt', 'w') as f:
+            f.write("#######\n")
+            f.write("Length = " + str(Objects.length) + "\n")
+            f.write("Distribution Increments = " + str(self.A.increments) + "\n")
+
+            f.write("Init conditions: \n")
+            for p in self.P:
+                f.write(p.name + ": (v=" + str(p.velocity) + ", p=" + str(p.position) + ", m=" + str(p.mass) + ")\n")
+
+            f.write("######\n")
+            for p in self.P:
+                f.write("" + str(p.name) + " distribution = " + np.array_str(p.pos_distribution, max_line_width=1000000) + "\n")
+
+            f.write("------\n")
+            f.close()
     def time_approach(self, dt, end):
         t = 0
         while Objects.time <= end:

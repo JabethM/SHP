@@ -81,6 +81,7 @@ A = (vel1, p[0], m[0])  # Velocity, Position and Mass
 B = (vel2, p[1], m[1])
 C = (vel3, p[2], m[2])
 
+
 print("A = " + str(A))
 print("B = " + str(B))
 print("C = " + str(C))

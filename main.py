@@ -66,8 +66,10 @@ class run:
         part1_vel = part1.calc_new_velocity(part2)
         part2_vel = part2.calc_new_velocity(part1)
 
-        for part in self.system:
+        for part in self.P:
             part.update_position(nt)
+        for w in self.W:
+            w.update_position(Objects.time + nt)
 
         cE = sum([0.5 * i.mass * (i.velocity ** 2) for i in self.system])
         part1.set_velocity(part1_vel)
@@ -107,21 +109,26 @@ class run:
 
         return next_coll, ball_collisions, wall_collisions
 
-    def collision_approach(self):
+    def collision_approach(self,t):
         events = []
-        for t in range(10000):
-            next_idx, p_collisions, w_collisions = self.detect_next_collision()
-            next_ball = p_collisions[next_idx]
-            #for w in w_collisions:
-            #    if w[0] <= next_ball[0]:
 
+        next_idx, p_collisions, w_collisions = self.detect_next_collision()
+        next_ball = p_collisions[next_idx]
+        for w in w_collisions:
+            if w[0] <= next_ball[0]:
+                self.system[w[2]].update_position(Objects.time + w[0])
+                other = self.system[w[1]]
+                self.system[w[2]].calc_pressure(other.momentum, other, w[0] + Objects.time)
 
+        self.update_values(*next_ball)
+        Objects.update_time(next_ball[0])
 
+        if Objects.time >= 100 and not self.write:
+            self.export_pressure()
+            self.export_pos_dist()
+            self.write = True
+            self.end = True
 
-            #self.update_values(*collision_info)
-            #self.update_diagram()
-
-            #events.append(collision_info)
         return self.system
 
     def system_positions(self, dt):
@@ -141,12 +148,14 @@ class run:
             current = w_collisions[i]
             nt = current[0]
             if Objects.time + dt >= Objects.time + nt and nt > 0:
-                self.system[current[2]].update_position(nt)
+                self.system[current[2]].update_position(Objects.time)
                 self.system[current[2]].calc_new_velocity(self.system[current[1]])
 
         if not collision_occurred:
-            for part in self.system:
+            for part in self.P:
                 part.update_position(dt)
+            for w in self.W:
+                w.update_position(Objects.time)
 
         self.update_diagram()
         print(Objects.time)
@@ -249,9 +258,9 @@ def main():
     A = (vel1, p[0], m[0])  # Velocity, Position and Mass
     B = (vel2, p[1], (m[1]))
     C = (vel3, p[2], (m[2]))
-    A= (-1494.912716649481, 383.64173165093575, 9.631480355394537)
-    B= (12.916345946725594, 283.398230578766, 19.451154872183654)
-    C= (5519.330361204851, 779.4251009329242, 2.5631704739917827)
+    A = (-1494.912716649481, 383.64173165093575, 9.631480355394537)
+    B = (12.916345946725594, 283.398230578766, 19.451154872183654)
+    C = (5519.330361204851, 779.4251009329242, 2.5631704739917827)
     W = range(0, 1000, 10)
     sim = run(length, A, B, C, W)  # Create the system
     sim.noAnim = True

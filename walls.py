@@ -17,13 +17,16 @@ class Walls(Objects):
 
     def calc_new_velocity(self, other):
         self.calc_pressure(other.momentum, other)
+        #other.pos_distribution[int(self.position)] += 1
+        #other.pressure_distribution[int(self.position)] += self.pressure
         return 0
 
-    def calc_pressure(self, mom, other):
+    def calc_pressure(self, mom, other, t=None):
         self.pressure += abs(mom)
-
+        if t is None:
+            t = self.time
         self.p_list.append(self.pressure)
-        self.time_list.append(self.time)
+        self.time_list.append(t)
 
         if other.name == 'A':
             self.part_mom[0] += self.pressure
@@ -34,11 +37,11 @@ class Walls(Objects):
         else:
             print("ERROR")
 
-        other.wall_pressure[self.idx].append((self.pressure, Objects.time))
+        other.wall_pressure[self.idx].append((self.pressure, t))
 
         return self.pressure
 
     def update_position(self, delta_time):
-        self.time_list.append(self.time)
+        self.time_list.append(delta_time)
         self.p_list.append(self.pressure)
         return self.get_position()

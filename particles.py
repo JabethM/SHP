@@ -28,7 +28,7 @@ class Particles(Objects):
         # if Particles.length is None:
         #    Particles.length = length
         # self.name = name
-        self.radius = 0.00001 # * sigmoid(np.sqrt(self.mass))
+        self.radius = 5 # * sigmoid(np.sqrt(self.mass))
         self.increments = 1
         self.pos_distribution = np.zeros(int(Objects.length // self.increments))
         self.pressure_distribution = np.zeros(int(Objects.length // self.increments))

@@ -12,15 +12,15 @@ import main
 from particles import Particles
 
 # The time step for the animation.
-dt = 0.1
-tMax = 1000000
+dt = 0.005
+tMax = 100000
 
 
 def get_pos(t=0):
     while t < tMax:
-        t += dt
-        system = sim.system_positions(dt)
-
+        #t += dt
+        system = sim.collision_approach(t)
+        t = sim.system[0].time
         yield system[0].position, system[1].position, system[2].position
 
 
@@ -81,6 +81,9 @@ A = (vel1, p[0], m[0])  # Velocity, Position and Mass
 B = (vel2, p[1], (m[1]))
 C = (vel3, p[2], (m[2]))
 
+A = (1812.6016608790178, 927.5484672569775, 18.35534448320567)
+B = (-1793.1840137378058, 252.5447347729187, 2.4032484234453784)
+C = (-1219.9488340806695, 862.5709287074595, 23.73989829182229)
 
 total_mom = A[0] * A[2] + B[0] * B[2] + C[0] * C[2]
 

@@ -16,6 +16,8 @@ class Objects:
         self.name = name
         self.radius = 0
         self.wall_pressure = None
+        self.pos_distribution = None
+        self.pressure_distribution = None
 
     def set_dt(self, new_dt):
         self.dt = new_dt

@@ -28,7 +28,7 @@ class Particles(Objects):
         # if Particles.length is None:
         #    Particles.length = length
         # self.name = name
-        self.radius = (Objects.length / 200)  # * sigmoid(np.sqrt(self.mass))
+        self.radius = 0.00001 # * sigmoid(np.sqrt(self.mass))
         self.increments = 1
         self.pos_distribution = np.zeros(int(Objects.length // self.increments))
         self.pressure_distribution = np.zeros(int(Objects.length // self.increments))
@@ -56,4 +56,6 @@ class Particles(Objects):
         self.pressure_distribution[int(num)] += self.momentum
         """
 
-
+    def init_wall_pressure(self, num):
+        self.wall_pressure = [[] for i in range(num)]
+        return

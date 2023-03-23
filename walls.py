@@ -1,4 +1,5 @@
 from objects import Objects
+import numpy as np
 
 
 class Walls(Objects):
@@ -11,9 +12,8 @@ class Walls(Objects):
         self.time_list = [0]
         self.p_list = [0]
         self.other = None
-        self.a = 0
-        self.b = 0
-        self.c = 0
+        self.part_mom = np.zeros(3)
+        self.idx = 0
 
     def calc_new_velocity(self, other):
         self.calc_pressure(other.momentum, other)
@@ -24,15 +24,18 @@ class Walls(Objects):
 
         self.p_list.append(self.pressure)
         self.time_list.append(self.time)
+
         if other.name == 'A':
-            self.a += self.pressure
+            self.part_mom[0] += self.pressure
         elif other.name == 'B':
-            self.b += self.pressure
+            self.part_mom[1] += self.pressure
         elif other.name == 'C':
-            self.c += self.pressure
+            self.part_mom[2] += self.pressure
         else:
             print("ERROR")
-            
+
+        other.wall_pressure[self.idx].append((self.pressure, Objects.time))
+
         return self.pressure
 
     def update_position(self, delta_time):

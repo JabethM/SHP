@@ -10,10 +10,12 @@ while line != "------\n":
         for i in range(3):
             line = f.readline()
             distribution = line.split("[")[1]
-            distribution = distribution.split(".]")[0]
-            distribution = distribution.split(". ")
+            distribution = distribution.split("]")[0]
+            distribution = distribution.split(" ")
+            distribution = list(filter(lambda a: a != '', distribution))
 
-            p = list(map(int, distribution))
+            p = list(map(float, distribution))
+            p = list(map(int, p))
             pos_placements.append(p)
     elif line == "###########\n":
         for i in range(3):
@@ -41,22 +43,22 @@ mc = np.array(pre_placements[2])
 fig = plt.figure()
 ax = fig.add_subplot(311)
 ax2 = fig.add_subplot(312)
-ax3 = fig.add_subplot(313)
+#ax3 = fig.add_subplot(313)
 
-ax.plot(x, pos_placements[0], label='A')
-ax.plot(x, pos_placements[1], label='B')
-ax.plot(x, pos_placements[2], label='C')
-ax.legend()
+ax.plot(x, pos_placements[0], label='A', color='r')
+ax.plot(x, pos_placements[1], label='B', color='g')
+ax.plot(x, pos_placements[2], label='C', color='b')
+ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 ax.set_xlabel('Position')
 ax.set_ylabel('Distribution')
 
 ax2.plot(x, (Pa + Pb + Pc))
 ax2.set_xlabel('Position')
-ax2.set_ylabel('Total Position Distribution')
+ax2.set_ylabel('Total Distribution')
 
 
-ax3.plot(x, (ma + mb + mc))
-ax3.set_xlabel('Position')
-ax3.set_ylabel('Momentum Distribution')
+#ax3.plot(x, (ma + mb + mc))
+#ax3.set_xlabel('Position')
+#ax3.set_ylabel('Momentum Distribution')
 
 plt.show()

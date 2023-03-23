@@ -15,6 +15,7 @@ class Objects:
             Objects.length = length
         self.name = name
         self.radius = 0
+        self.wall_pressure = None
 
     def set_dt(self, new_dt):
         self.dt = new_dt

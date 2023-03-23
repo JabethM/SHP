@@ -25,8 +25,17 @@ class run:
             self.W = []
             for i in range(len(w_positions)):
                 w = Walls(0, w_positions[i], 0, name="W" + str(i))
+                w.idx = i
                 self.system.append(w)
                 self.W.append(w)
+
+            for p in self.P:
+                p.init_wall_pressure(len(self.W))
+        self.last = None
+        self.first_collision = False
+        self.point = False
+        self.end = False
+        self.noAnim = False
 
     def t_t_collision(self, part1: Objects, part2: Objects):
         """
@@ -60,12 +69,13 @@ class run:
         for part in self.system:
             part.update_position(nt)
 
+        cE = sum([0.5 * i.mass * (i.velocity ** 2) for i in self.system])
         part1.set_velocity(part1_vel)
         part2.set_velocity(part2_vel)
+        cE = sum([0.5 * i.mass * (i.velocity ** 2) for i in self.system])
 
         part1.update_mom()
         part2.update_mom()
-
         return
 
     def update_diagram(self):
@@ -88,7 +98,9 @@ class run:
         wall_collisions = []
 
         times = [x[0] for x in ball_collisions]
-        next_coll = np.argmin(times)
+        times = np.array(times)
+        # next_coll = np.argmin(times)
+        next_coll = int(np.where(times == np.min(times[np.nonzero(times)]))[0])
 
         if self.W is not None:
             wall_collisions = collisions[3:]
@@ -97,14 +109,20 @@ class run:
 
     def collision_approach(self):
         events = []
-        for t in range(1000):
-            collision_info = self.detect_next_collision()
+        for t in range(10000):
+            next_idx, p_collisions, w_collisions = self.detect_next_collision()
+            next_ball = p_collisions[next_idx]
+            #for w in w_collisions:
+            #    if w[0] <= next_ball[0]:
 
-            self.update_values(*collision_info)
-            self.update_diagram()
 
-            events.append(collision_info)
-        return
+
+
+            #self.update_values(*collision_info)
+            #self.update_diagram()
+
+            #events.append(collision_info)
+        return self.system
 
     def system_positions(self, dt):
 
@@ -113,6 +131,7 @@ class run:
         nt = next_coll[0]
         collision_occurred = False
 
+        last_collision_condition = (next_coll[0] == self.last or next_coll[1] == self.last)
         if Objects.time + dt >= Objects.time + nt and (not next_coll[-1] or nt > 0):
             self.update_values(*next_coll)
             collision_occurred = True
@@ -130,32 +149,46 @@ class run:
                 part.update_position(dt)
 
         self.update_diagram()
-        # print(self.consMom, self.consE)
+        print(Objects.time)
         t = Objects.update_time(dt)
 
-        if Objects.time >= 50 and not self.write:
+        if Objects.time >= 100 and not self.write:
             self.export_pressure()
             self.export_pos_dist()
             self.write = True
+            self.end = True
         # o = 2 * (collision_info[1] + collision_info[2]) % 3
         # print(self.system[o].name)
-
+        # print(sum([i.momentum for i in self.system]), sum([0.5 * i.mass * (i.velocity ** 2) for i in self.system]))
         return self.system
 
     def export_pressure(self):
         with open('pressure-data.txt', 'w') as f:
 
-            f.write("#######\n")
+            f.write("#####\n")
             f.write("init conditions: \n")
             for p in self.P:
                 f.write(p.name + ": (v=" + str(p.velocity) + ", p=" + str(p.position) + ", m=" + str(p.mass) + ")\n")
-            f.write("#######\n")
-            f.write("Time:\n")
-            f.write("t = " + str(self.W[0].time_list) + "\n")
+            f.write("########\n")
+
             for w in self.W:
                 f.write("Position - " + str(w.position) + "\n")
-                f.write("p = " + str(w.p_list))
+                f.write("a momentum : " + str(w.part_mom[0]) + "\n")
+                f.write("b momentum : " + str(w.part_mom[1]) + "\n")
+                f.write("c momentum : " + str(w.part_mom[2]) + "\n")
                 f.write('\n')
+
+            f.write("#########\n")
+            for p in self.P:
+                f.write(">->->\n")
+                f.write("Wall pressure contributions of " + p.name + "\n")
+                for i in range(len(p.wall_pressure)):
+                    ts = [wp[1] for wp in p.wall_pressure[i]]
+                    ms = [wp[0] for wp in p.wall_pressure[i]]
+                    f.write(str(self.W[i].position) + "\n")
+                    f.write("> Time: " + str(ts) + "\n")
+                    f.write("> Pressure: " + str(ms) + "\n")
+                f.write("<-<-<\n")
             f.write("------\n")
             f.close()
 
@@ -185,10 +218,11 @@ class run:
     def time_approach(self, dt, end):
         t = 0
         while Objects.time <= end:
-            self.system_positions(t, dt)
+            self.system_positions(dt)
             t += dt
-            Objects.time = t
 
+            if self.noAnim and self.end:
+                break
         return
 
 
@@ -196,14 +230,34 @@ def main():
     ####
     # Set System Parameters
     length = 1000  # Length
-    A = (0, 100, 150)  # Velocity, Position and Mass
-    B = (-1, -700, 1)
-    C = (-2, -100, 150)
-    W = (0, 0, 0)
-    sim = run(length, A, B, C)  # Create the system
+    v = 50
+    cap = v * 100
+
+    def rand_num():
+        return np.random.random() * 100
+
+    def rand_set():
+        return np.array([rand_num(), rand_num(), rand_num()])
+
+    m = rand_set() / 4
+    p = rand_set() * 10
+
+    vel1 = (rand_num() * v) - cap / 2
+    vel2 = (rand_num() * v) - cap / 2
+    vel3 = -((m[0]) * vel1 + (m[1]) * vel2) / (m[2])
+
+    A = (vel1, p[0], m[0])  # Velocity, Position and Mass
+    B = (vel2, p[1], (m[1]))
+    C = (vel3, p[2], (m[2]))
+    A= (-1494.912716649481, 383.64173165093575, 9.631480355394537)
+    B= (12.916345946725594, 283.398230578766, 19.451154872183654)
+    C= (5519.330361204851, 779.4251009329242, 2.5631704739917827)
+    W = range(0, 1000, 10)
+    sim = run(length, A, B, C, W)  # Create the system
+    sim.noAnim = True
     ####
     # sim.collision_approach()
-    sim.time_approach(0.1, 10000)
+    sim.time_approach(0.005, 10000)
 
 
 # Press the green button in the gutter to run the script.

@@ -42,14 +42,16 @@ class Particles(Objects):
 
     def update_position(self, delta_time):
         p = super().update_position(delta_time)
-
-        pos_shifted = np.roll(self.pos_distribution, 5 - int(p))
-        pos_shifted[:11] += 1
-        self.pos_distribution = np.roll(pos_shifted, int(p) - 5)
-
-        pre_shifted = np.roll(self.pressure_distribution, 5 - int(p))
-        pre_shifted[:11] += self.momentum
-        self.pressure_distribution = np.roll(pre_shifted, int(p) - 5)
+        if not self.CApproach:
+            test = self.pos_distribution
+            pos_shifted = np.roll(self.pos_distribution, 5 - int(p))
+            pos_shifted[:11] += 1
+            self.pos_distribution = np.roll(pos_shifted, int(p) - 5)
+            test = self.pos_distribution
+            pre_shifted = np.roll(self.pressure_distribution, 5 - int(p))
+            pre_shifted[:11] += self.momentum
+            self.pressure_distribution = np.roll(pre_shifted, int(p) - 5)
+        ####
         """
         num_test = int(p)
         num = (int(p) + np.sign(self.velocity) * 5) % Objects.length

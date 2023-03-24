@@ -2,9 +2,10 @@ from particles import Particles
 import numpy as np
 from objects import Objects
 from walls import Walls
+import math
 
 
-class run:
+class ring:
 
     def __init__(self, length, a_params, b_params, c_params, w_positions=None):
         self.write = False
@@ -32,10 +33,51 @@ class run:
             for p in self.P:
                 p.init_wall_pressure(len(self.W))
         self.last = None
-        self.first_collision = False
-        self.point = False
+
         self.end = False
         self.noAnim = False
+        self.CApproach = False
+        self.collection_point = 10
+
+    def update_data_distributions(self, dv, x_old, x_new):
+        for i in range(3):
+            dist = self.dist_travelled(dv[i], x_old[i], x_new[i], self.P[i].radius, 0)
+            part = self.P[i]
+            if dv[i] > 0:
+                start = math.ceil((x_old[i] - part.radius) % Objects.length)
+                end = math.floor(x_old[i] + dist) + 1
+
+                test = self.P[i].pos_distribution
+                pos_shifted = np.roll(self.P[i].pos_distribution, -start)
+                pos_shifted[:(end - start)] += 1
+                self.P[i].pos_distribution = np.roll(pos_shifted, start)
+
+                pres_shifted = np.roll(self.P[i].pressure_distribution, -start)
+                pres_shifted[:(end - start)] += 1
+                self.P[i].pressure_distribution = np.roll(pres_shifted, start)
+                test = self.P[i].pos_distribution
+            else:
+                start = (math.floor(x_old[i] + part.radius) + 1) % Objects.length
+                end = math.floor(x_old[i] - dist)
+
+                test = self.P[i].pos_distribution
+                pos_shifted = np.roll(self.P[i].pos_distribution, -start)
+                pos_shifted[(end - start):] += 1
+                self.P[i].pos_distribution = np.roll(pos_shifted, start)
+
+                pres_shifted = np.roll(self.P[i].pressure_distribution, -start)
+                pres_shifted[(end - start):] += 1
+                self.P[i].pressure_distribution = np.roll(pres_shifted, start)
+                test = self.P[i].pos_distribution
+            dummy = 2
+
+    def dist_travelled(self, dv, pos1, pos2, r1, r2):
+        a = np.sign([dv])[0]
+        b = pos2 - pos1
+        c = (a * b) % Objects.length
+        d = (r1 + r2)
+        delta_dist = c - d
+        return delta_dist
 
     def t_t_collision(self, part1: Objects, part2: Objects):
         """
@@ -46,11 +88,7 @@ class run:
         """
 
         delta_vel = part1.velocity - part2.velocity
-        a = np.sign([delta_vel])[0]
-        b = (part2.position - part1.position)
-        c = (a * b) % Objects.length
-        d = (part1.radius + part2.radius)
-        delta_dist = c - d
+        delta_dist = self.dist_travelled(delta_vel, part1.position, part2.position, part1.radius, part2.radius)
         # delta_dist calculates which distance to use based on the difference in velocity
         if delta_vel == 0:
             return float('inf')
@@ -109,21 +147,28 @@ class run:
 
         return next_coll, ball_collisions, wall_collisions
 
-    def collision_approach(self,t):
+    def collision_approach(self, t):
+        Objects.CApproach = True
         events = []
 
         next_idx, p_collisions, w_collisions = self.detect_next_collision()
         next_ball = p_collisions[next_idx]
         for w in w_collisions:
-            if w[0] <= next_ball[0]:
+            if next_ball[0] >= w[0] >= 0:
+                a = Objects.time + w[0]
+                b = self.system[w[2]].time_list
                 self.system[w[2]].update_position(Objects.time + w[0])
                 other = self.system[w[1]]
                 self.system[w[2]].calc_pressure(other.momentum, other, w[0] + Objects.time)
 
+        v_old = [np.sign([p.velocity])[0] for p in self.P]
+        x_old = [p.position for p in self.P]
         self.update_values(*next_ball)
-        Objects.update_time(next_ball[0])
 
-        if Objects.time >= 100 and not self.write:
+        x_new = [p.position for p in self.P]
+        self.update_data_distributions(v_old, x_old, x_new)
+        Objects.update_time(next_ball[0])
+        if Objects.time >= self.collection_point and not self.write:
             self.export_pressure()
             self.export_pos_dist()
             self.write = True
@@ -132,7 +177,7 @@ class run:
         return self.system
 
     def system_positions(self, dt):
-
+        Objects.CApproach = False
         next_idx, p_collisions, w_collisions = self.detect_next_collision()
         next_coll = p_collisions[next_idx]
         nt = next_coll[0]
@@ -161,7 +206,7 @@ class run:
         print(Objects.time)
         t = Objects.update_time(dt)
 
-        if Objects.time >= 100 and not self.write:
+        if Objects.time >= self.collection_point and not self.write:
             self.export_pressure()
             self.export_pos_dist()
             self.write = True
@@ -224,11 +269,17 @@ class run:
             f.write("------\n")
             f.close()
 
-    def time_approach(self, dt, end):
+    def run(self, dt, end, c_approach):
         t = 0
+        self.collection_point = 1
+        self.CApproach = c_approach
         while Objects.time <= end:
-            self.system_positions(dt)
-            t += dt
+            if self.CApproach:
+                system = self.collision_approach(t)
+                t = self.system[0].time
+            else:
+                self.system_positions(dt)
+                t += dt
 
             if self.noAnim and self.end:
                 break
@@ -258,15 +309,17 @@ def main():
     A = (vel1, p[0], m[0])  # Velocity, Position and Mass
     B = (vel2, p[1], (m[1]))
     C = (vel3, p[2], (m[2]))
-    A = (-1494.912716649481, 383.64173165093575, 9.631480355394537)
-    B = (12.916345946725594, 283.398230578766, 19.451154872183654)
-    C = (5519.330361204851, 779.4251009329242, 2.5631704739917827)
+
+    #A = (436.6755201473969, 942.037726682613, 0.023102833093793795)
+    #B = (445.72750775754014, 251.88894735099854, 19.104199940935114)
+    #C = (-802.187982013197, 354.98571547290226, 10.627628511259113)
+
     W = range(0, 1000, 10)
-    sim = run(length, A, B, C, W)  # Create the system
+    sim = ring(length, A, B, C, W)  # Create the system
     sim.noAnim = True
     ####
     # sim.collision_approach()
-    sim.time_approach(0.005, 10000)
+    sim.run(0.005, 10000, True)
 
 
 # Press the green button in the gutter to run the script.

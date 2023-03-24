@@ -14,19 +14,25 @@ from particles import Particles
 # The time step for the animation.
 dt = 0.005
 tMax = 100000
+time_bool = False
 
 
 def get_pos(t=0):
+    sim.collection_point = 5
     while t < tMax:
-        #t += dt
-        system = sim.collision_approach(t)
-        t = sim.system[0].time
+        if time_bool:
+            t += dt
+            system = sim.system_positions(dt)
+        else:
+            system = sim.collision_approach(t)
+            t = sim.system[0].time
+
         yield system[0].position, system[1].position, system[2].position
 
 
 def init():
     ax.set_xlim(0, Particles.length)
-    ax.set_ylim(-25 * 5, 25 * 5)#sim.system[0].radius, 25 * sim.system[0].radius)
+    ax.set_ylim(-25 * 5, 25 * 5)  # sim.system[0].radius, 25 * sim.system[0].radius)
     ax.set_xlabel('$x$ /m')
 
     for i in range(len(balls)):
@@ -74,19 +80,23 @@ cap = v * 10
 vel1 = (rand_num() * v) - cap / 2
 vel2 = (rand_num() * v) - cap / 2
 vel3 = -((m[0]) * vel1 + (m[1]) * vel2) / (m[2])
-#vel3 = (rand_num() * v) - cap/2
+# vel3 = (rand_num() * v) - cap/2
 
 
 A = (vel1, p[0], m[0])  # Velocity, Position and Mass
 B = (vel2, p[1], (m[1]))
 C = (vel3, p[2], (m[2]))
 
-A = (1812.6016608790178, 927.5484672569775, 18.35534448320567)
-B = (-1793.1840137378058, 252.5447347729187, 2.4032484234453784)
-C = (-1219.9488340806695, 862.5709287074595, 23.73989829182229)
+#A = (1812.6016608790178, 927.5484672569775, 18.35534448320567)
+#B = (-1793.1840137378058, 252.5447347729187, 2.4032484234453784)
+#C = (-1219.9488340806695, 862.5709287074595, 23.73989829182229)
+
+A = (436.6755201473969, 942.037726682613, 0.023102833093793795)
+B = (445.72750775754014, 251.88894735099854, 19.104199940935114)
+C = (-802.187982013197, 354.98571547290226, 10.627628511259113)
+
 
 total_mom = A[0] * A[2] + B[0] * B[2] + C[0] * C[2]
-
 
 print("A = " + str(A))
 print("B = " + str(B))
@@ -94,7 +104,7 @@ print("C = " + str(C))
 print("Mom = " + str(total_mom))
 
 W = range(0, 1000, 10)
-sim = main.run(length, A, B, C, W)  # Create the system
+sim = main.ring(length, A, B, C, W)  # Create the system
 ####
 
 fig = plt.figure()
@@ -103,7 +113,7 @@ ax2 = fig.add_subplot(212)
 ax.set_aspect('equal')
 
 # These are the objects we need to keep track of.
-balls = [plt.Circle((sim.system[i].position, i), radius=5)#sim.system[i].radius)
+balls = [plt.Circle((sim.system[i].position, i), radius=5)  # sim.system[i].radius)
          for i in range(3)]
 balls[0].set_color('r')
 balls[1].set_color('g')

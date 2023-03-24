@@ -39,36 +39,60 @@ class ring:
         self.CApproach = False
         self.collection_point = 10
 
-    def update_data_distributions(self, dv, x_old, x_new):
+    def update_data_distributions(self, v, x_old, x_new, m_old):
+        dv = np.sign(v)
         for i in range(3):
-            dist = self.dist_travelled(dv[i], x_old[i], x_new[i], self.P[i].radius, 0)
             part = self.P[i]
-            if dv[i] > 0:
-                start = math.ceil((x_old[i] - part.radius) % Objects.length)
-                end = math.floor(x_old[i] + dist) + 1
+            dist = self.dist_travelled(dv[i], x_old[i], x_new[i], 0, 0)
+            t = [self.t_t_collision(v1=v[i], v2=0, p1=x_old[i], p2=t_idx, r1=part.radius, r2=0) + Objects.time
+                 for t_idx in range(Objects.length)]
 
-                test = self.P[i].pos_distribution
-                pos_shifted = np.roll(self.P[i].pos_distribution, -start)
+            if dv[i] > 0:
+                start = math.ceil((x_old[i]) % Objects.length + part.radius)
+                end = math.floor(x_old[i] + dist + part.radius) + 1   # Don't want to double count radius
+
+                test = part.pos_distribution
+                pos_shifted = np.roll(part.pos_distribution, -start)
                 pos_shifted[:(end - start)] += 1
                 self.P[i].pos_distribution = np.roll(pos_shifted, start)
 
-                pres_shifted = np.roll(self.P[i].pressure_distribution, -start)
-                pres_shifted[:(end - start)] += 1
+                pres_shifted = np.roll(part.pressure_distribution, -start)
+                pres_shifted[:(end - start)] += abs(m_old[i])
                 self.P[i].pressure_distribution = np.roll(pres_shifted, start)
-                test = self.P[i].pos_distribution
-            else:
-                start = (math.floor(x_old[i] + part.radius) + 1) % Objects.length
-                end = math.floor(x_old[i] - dist)
 
-                test = self.P[i].pos_distribution
-                pos_shifted = np.roll(self.P[i].pos_distribution, -start)
+            else:
+                start = (math.floor(x_old[i] - part.radius)) % Objects.length
+                end = math.ceil(x_old[i] - dist - part.radius) - 1
+
+                test = part.pos_distribution
+                pos_shifted = np.roll(part.pos_distribution, -start)
                 pos_shifted[(end - start):] += 1
                 self.P[i].pos_distribution = np.roll(pos_shifted, start)
 
-                pres_shifted = np.roll(self.P[i].pressure_distribution, -start)
-                pres_shifted[(end - start):] += 1
+                pres_shifted = np.roll(part.pressure_distribution, -start)
+                pres_shifted[(end - start):] += abs(m_old[i])
                 self.P[i].pressure_distribution = np.roll(pres_shifted, start)
                 test = self.P[i].pos_distribution
+            inc = int(dv[i])
+
+            for j in range(start, end, int(dv[i])):
+                dum = j
+                print(dum)
+                t_val = t[j % Objects.length]
+                if not self.P[i].wall_pressure_efficient[j % Objects.length]:
+                    self.P[i].wall_pressure_efficient[j % Objects.length].append((abs(m_old[i]), t[j % Objects.length]))
+                else:
+
+                    mom = abs(m_old[i]) + self.P[i].wall_pressure_efficient[(j % Objects.length)][-1][0]
+                    self.P[i].wall_pressure_efficient[j % Objects.length].append((mom, t[j % Objects.length]))
+                if j % 10 == 0:
+                    j_val = int(j % Objects.length // 10)
+                    if not self.P[i].wall_pressure_comparison[j_val]:
+                        self.P[i].wall_pressure_comparison[j_val].append((abs(m_old[i]), t[j % Objects.length]))
+                    else:
+                        mom1 = abs(m_old[i])
+                        mom1 = abs(m_old[i]) + self.P[i].wall_pressure_comparison[j_val][-1][0]
+                        self.P[i].wall_pressure_comparison[j_val].append((mom1, t[j % Objects.length]))
             dummy = 2
 
     def dist_travelled(self, dv, pos1, pos2, r1, r2):
@@ -79,16 +103,18 @@ class ring:
         delta_dist = c - d
         return delta_dist
 
-    def t_t_collision(self, part1: Objects, part2: Objects):
-        """
-        Time Until Collision
-        :param part1:
-        :param part2:
-        :return:
-        """
+    def t_t_collision(self, part1=None, part2=None, v1=0, v2=0, p1=0, p2=0, r1=0, r2=0):
+        if part1 is not None and part2 is not None:
+            v1 = part1.velocity
+            p1 = part1.position
+            r1 = part1.radius
 
-        delta_vel = part1.velocity - part2.velocity
-        delta_dist = self.dist_travelled(delta_vel, part1.position, part2.position, part1.radius, part2.radius)
+            v2 = part2.velocity
+            p2 = part2.position
+            r2 = part2.radius
+
+        delta_vel = v1 - v2
+        delta_dist = self.dist_travelled(delta_vel, p1, p2, r1, r2)
         # delta_dist calculates which distance to use based on the difference in velocity
         if delta_vel == 0:
             return float('inf')
@@ -153,20 +179,24 @@ class ring:
 
         next_idx, p_collisions, w_collisions = self.detect_next_collision()
         next_ball = p_collisions[next_idx]
+
         for w in w_collisions:
             if next_ball[0] >= w[0] >= 0:
                 a = Objects.time + w[0]
                 b = self.system[w[2]].time_list
                 self.system[w[2]].update_position(Objects.time + w[0])
                 other = self.system[w[1]]
+                mom = other.momentum
                 self.system[w[2]].calc_pressure(other.momentum, other, w[0] + Objects.time)
 
-        v_old = [np.sign([p.velocity])[0] for p in self.P]
+        v_old = [p.velocity for p in self.P]
         x_old = [p.position for p in self.P]
+        m_old = [p.momentum for p in self.P]
         self.update_values(*next_ball)
 
         x_new = [p.position for p in self.P]
-        self.update_data_distributions(v_old, x_old, x_new)
+        self.update_data_distributions(v_old, x_old, x_new, m_old)
+
         Objects.update_time(next_ball[0])
         if Objects.time >= self.collection_point and not self.write:
             self.export_pressure()
@@ -310,9 +340,9 @@ def main():
     B = (vel2, p[1], (m[1]))
     C = (vel3, p[2], (m[2]))
 
-    #A = (436.6755201473969, 942.037726682613, 0.023102833093793795)
-    #B = (445.72750775754014, 251.88894735099854, 19.104199940935114)
-    #C = (-802.187982013197, 354.98571547290226, 10.627628511259113)
+    A = (436.6755201473969, 942.037726682613, 0.023102833093793795)
+    B = (445.72750775754014, 251.88894735099854, 19.104199940935114)
+    C = (-802.187982013197, 354.98571547290226, 10.627628511259113)
 
     W = range(0, 1000, 10)
     sim = ring(length, A, B, C, W)  # Create the system

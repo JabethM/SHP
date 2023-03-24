@@ -43,7 +43,7 @@ mc = np.array(pre_placements[2])
 fig = plt.figure()
 ax = fig.add_subplot(311)
 ax2 = fig.add_subplot(312)
-#ax3 = fig.add_subplot(313)
+ax3 = fig.add_subplot(313)
 
 ax.plot(x, pos_placements[0], label='A', color='r')
 ax.plot(x, pos_placements[1], label='B', color='g')
@@ -57,8 +57,11 @@ ax2.set_xlabel('Position')
 ax2.set_ylabel('Total Distribution')
 
 
-#ax3.plot(x, (ma + mb + mc))
-#ax3.set_xlabel('Position')
-#ax3.set_ylabel('Momentum Distribution')
+ax3.plot(x, ma, label='A', color='r')
+ax3.plot(x, mb, label='B', color='g')
+ax3.plot(x, mc, label='C', color='b')
+ax3.plot(x, (ma + mb + mc), label='total')
+ax3.set_xlabel('Position')
+ax3.set_ylabel('Momentum Distribution')
 
 plt.show()

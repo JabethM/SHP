@@ -28,16 +28,20 @@ class Walls(Objects):
         self.p_list.append(self.pressure)
         self.time_list.append(t)
 
+        part = None
         if other.name == 'A':
-            self.part_mom[0] += self.pressure
+            self.part_mom[0] += abs(mom)
+            part = 0
         elif other.name == 'B':
-            self.part_mom[1] += self.pressure
+            self.part_mom[1] += abs(mom)
+            part = 1
         elif other.name == 'C':
-            self.part_mom[2] += self.pressure
+            self.part_mom[2] += abs(mom)
+            part = 2
         else:
             print("ERROR")
 
-        other.wall_pressure[self.idx].append((self.pressure, t))
+        other.wall_pressure[self.idx].append((self.part_mom[part], t))
 
         return self.pressure
 

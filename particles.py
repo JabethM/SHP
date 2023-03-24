@@ -60,4 +60,6 @@ class Particles(Objects):
 
     def init_wall_pressure(self, num):
         self.wall_pressure = [[] for i in range(num)]
+        self.wall_pressure_comparison = [[] for i in range(num)]
+        self.wall_pressure_efficient = [[] for i in range(self.length)]
         return

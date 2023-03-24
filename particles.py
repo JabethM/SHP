@@ -28,7 +28,7 @@ class Particles(Objects):
         # if Particles.length is None:
         #    Particles.length = length
         # self.name = name
-        self.radius = 5 # * sigmoid(np.sqrt(self.mass))
+        self.radius = 5  # * sigmoid(np.sqrt(self.mass))
         self.increments = 1
         self.pos_distribution = np.zeros(int(Objects.length // self.increments))
         self.pressure_distribution = np.zeros(int(Objects.length // self.increments))
@@ -40,7 +40,7 @@ class Particles(Objects):
             new_vel = super().calc_new_velocity(other)
         return new_vel
 
-    def update_position(self, delta_time):
+    def update_position(self, delta_time):  # Hardcoded for radius = 5
         p = super().update_position(delta_time)
         if not self.CApproach:
             test = self.pos_distribution

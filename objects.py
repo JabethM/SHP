@@ -19,7 +19,7 @@ class Objects:
         self.pos_distribution = None
         self.pressure_distribution = None
         self.wall_pressure_efficient = None
-        self.wall_pressure_comparison = None
+
 
     def set_dt(self, new_dt):
         self.dt = new_dt

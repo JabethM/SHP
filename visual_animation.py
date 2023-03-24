@@ -18,7 +18,7 @@ time_bool = False
 
 
 def get_pos(t=0):
-    sim.collection_point = 5
+    sim.collection_point = 500
     while t < tMax:
         if time_bool:
             t += dt

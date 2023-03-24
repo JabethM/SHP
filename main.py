@@ -49,12 +49,16 @@ class ring:
 
             if dv[i] > 0:
                 start = math.ceil((x_old[i]) % Objects.length + part.radius)
-                end = math.floor(x_old[i] + dist + part.radius) + 1   # Don't want to double count radius
+                end = math.floor(x_old[i] + dist + part.radius) + 1  # Don't want to double count radius
+
+                if start == end:
+                    continue
 
                 test = part.pos_distribution
                 pos_shifted = np.roll(part.pos_distribution, -start)
                 pos_shifted[:(end - start)] += 1
                 self.P[i].pos_distribution = np.roll(pos_shifted, start)
+                test = self.P[i].pos_distribution
 
                 pres_shifted = np.roll(part.pressure_distribution, -start)
                 pres_shifted[:(end - start)] += abs(m_old[i])
@@ -63,6 +67,9 @@ class ring:
             else:
                 start = (math.floor(x_old[i] - part.radius)) % Objects.length
                 end = math.ceil(x_old[i] - dist - part.radius) - 1
+
+                if start == end:
+                    continue
 
                 test = part.pos_distribution
                 pos_shifted = np.roll(part.pos_distribution, -start)
@@ -76,23 +83,14 @@ class ring:
             inc = int(dv[i])
 
             for j in range(start, end, int(dv[i])):
-                dum = j
-                print(dum)
+
                 t_val = t[j % Objects.length]
                 if not self.P[i].wall_pressure_efficient[j % Objects.length]:
                     self.P[i].wall_pressure_efficient[j % Objects.length].append((abs(m_old[i]), t[j % Objects.length]))
                 else:
-
                     mom = abs(m_old[i]) + self.P[i].wall_pressure_efficient[(j % Objects.length)][-1][0]
                     self.P[i].wall_pressure_efficient[j % Objects.length].append((mom, t[j % Objects.length]))
-                if j % 10 == 0:
-                    j_val = int(j % Objects.length // 10)
-                    if not self.P[i].wall_pressure_comparison[j_val]:
-                        self.P[i].wall_pressure_comparison[j_val].append((abs(m_old[i]), t[j % Objects.length]))
-                    else:
-                        mom1 = abs(m_old[i])
-                        mom1 = abs(m_old[i]) + self.P[i].wall_pressure_comparison[j_val][-1][0]
-                        self.P[i].wall_pressure_comparison[j_val].append((mom1, t[j % Objects.length]))
+
             dummy = 2
 
     def dist_travelled(self, dv, pos1, pos2, r1, r2):
@@ -180,14 +178,15 @@ class ring:
         next_idx, p_collisions, w_collisions = self.detect_next_collision()
         next_ball = p_collisions[next_idx]
 
-        for w in w_collisions:
-            if next_ball[0] >= w[0] >= 0:
-                a = Objects.time + w[0]
-                b = self.system[w[2]].time_list
-                self.system[w[2]].update_position(Objects.time + w[0])
-                other = self.system[w[1]]
-                mom = other.momentum
-                self.system[w[2]].calc_pressure(other.momentum, other, w[0] + Objects.time)
+        if not self.noAnim:
+            for w in w_collisions:
+                if next_ball[0] >= w[0] >= 0:
+                    # a = Objects.time + w[0]
+                    # b = self.system[w[2]].time_list
+                    self.system[w[2]].update_position(Objects.time + w[0])
+                    other = self.system[w[1]]
+                    # mom = other.momentum
+                    self.system[w[2]].calc_pressure(other.momentum, other, w[0] + Objects.time)
 
         v_old = [p.velocity for p in self.P]
         x_old = [p.position for p in self.P]
@@ -198,6 +197,7 @@ class ring:
         self.update_data_distributions(v_old, x_old, x_new, m_old)
 
         Objects.update_time(next_ball[0])
+        print(Objects.time)
         if Objects.time >= self.collection_point and not self.write:
             self.export_pressure()
             self.export_pos_dist()
@@ -248,33 +248,32 @@ class ring:
 
     def export_pressure(self):
         with open('pressure-data.txt', 'w') as f:
-
             f.write("#####\n")
             f.write("init conditions: \n")
             for p in self.P:
                 f.write(p.name + ": (v=" + str(p.velocity) + ", p=" + str(p.position) + ", m=" + str(p.mass) + ")\n")
             f.write("########\n")
 
-            for w in self.W:
-                f.write("Position - " + str(w.position) + "\n")
-                f.write("a momentum : " + str(w.part_mom[0]) + "\n")
-                f.write("b momentum : " + str(w.part_mom[1]) + "\n")
-                f.write("c momentum : " + str(w.part_mom[2]) + "\n")
-                f.write('\n')
-
-            f.write("#########\n")
             for p in self.P:
                 f.write(">->->\n")
                 f.write("Wall pressure contributions of " + p.name + "\n")
-                for i in range(len(p.wall_pressure)):
-                    ts = [wp[1] for wp in p.wall_pressure[i]]
-                    ms = [wp[0] for wp in p.wall_pressure[i]]
-                    f.write(str(self.W[i].position) + "\n")
+
+                if self.noAnim:
+                    wall_data = p.wall_pressure_efficient
+                else:
+                    wall_data = p.wall_pressure
+
+                for i in range(len(wall_data)):
+                    f.write("position = " + str(i) + "\n")
+
+                    ts = [wp[1] for wp in wall_data[i]]
+                    ms = [wp[0] for wp in wall_data[i]]
                     f.write("> Time: " + str(ts) + "\n")
                     f.write("> Pressure: " + str(ms) + "\n")
                 f.write("<-<-<\n")
             f.write("------\n")
             f.close()
+        return
 
     def export_pos_dist(self):
         with open('position_distribution.txt', 'w') as f:
@@ -301,7 +300,7 @@ class ring:
 
     def run(self, dt, end, c_approach):
         t = 0
-        self.collection_point = 1
+        self.collection_point = 500
         self.CApproach = c_approach
         while Objects.time <= end:
             if self.CApproach:
